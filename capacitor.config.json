@@ -1,0 +1,13 @@
+{
+  "appId": "com.roverfinance.app",
+  "appName": "Rover Finance",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}
