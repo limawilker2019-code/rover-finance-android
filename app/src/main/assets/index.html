@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rover Finance</title>
+  <style>
+    body { font-family: sans-serif; padding: 16px; }
+    input, select { display: block; margin: 8px 0; padding: 8px; width: 100%; max-width: 400px; }
+  </style>
+</head>
+<body>
+  <h1>Rover Finance (Web)</h1>
+  <form id="txnForm">
+    <input id="amount" type="text" placeholder="Valor" />
+    <select id="type">
+      <option value="expense">Despesa</option>
+      <option value="income">Receita</option>
+    </select>
+    <input id="description" type="text" placeholder="Descrição" />
+    <button id="saveBtn" type="button">Salvar</button>
+  </form>
+
+  <script>
+    // Agente IA local: heurísticas simples para classificar notificações e extrair categoria
+    function handleNotification(payloadStr) {
+      var payload;
+      try {
+        payload = (typeof payloadStr === 'string') ? JSON.parse(payloadStr) : payloadStr;
+      } catch(e) {
+        try { payload = JSON.parse(payloadStr.replace(/\\'/g, "'")); } catch(e2) { console.error('parse fail', e2); payload = {}; }
+      }
+
+      var amount = payload.amount || 0;
+      var amountRaw = payload.amount_raw || '';
+      var title = payload.title || '';
+      var text = payload.text || '';
+      var big = payload.big_text || '';
+      var pkg = payload.package || '';
+
+      var combined = (title + ' ' + text + ' ' + big).toLowerCase();
+
+      // keywords simples
+      var incomeKeywords = ['recebido','depositado','creditado','transferência recebida','recebi','pix recebido','depósito','transferência concluída','crédito'];
+      var expenseKeywords = ['pagou','pago','debito','compra','compra realizada','saque','pix','transferência enviada','pagamento','cobrança','compra no valor'];
+
+      var type = 'expense';
+      for (var i=0;i<incomeKeywords.length;i++) if (combined.indexOf(incomeKeywords[i])!==-1) { type='income'; break; }
+      for (var j=0;j<expenseKeywords.length;j++) if (combined.indexOf(expenseKeywords[j])!==-1) { type='expense'; break; }
+
+      // category heuristics
+      var category = 'Outros';
+      if (combined.indexOf('uber')!==-1 || combined.indexOf('taxi')!==-1) category='Transporte';
+      else if (combined.indexOf('ifood')!==-1 || combined.indexOf('ubereats')!==-1 || combined.indexOf('restaurante')!==-1) category='Alimentação';
+      else if (combined.indexOf('mercado')!==-1 || combined.indexOf('super')!==-1) category='Supermercado';
+
+      document.getElementById('amount').value = (amount && !isNaN(amount)) ? Number(amount).toFixed(2) : amountRaw;
+      document.getElementById('type').value = type;
+      var desc = title || pkg;
+      if (text) desc += ' - ' + text;
+      document.getElementById('description').value = desc;
+
+      // opcional: foco ou notificação visual
+      // flash the save button to indicate detection
+      var btn = document.getElementById('saveBtn');
+      btn.style.background = '#ff0';
+      setTimeout(function(){ btn.style.background = ''; }, 800);
+    }
+
+    // salvar (callback local) — substituir por integração real com app storage
+    document.getElementById('saveBtn').addEventListener('click', function(){
+      var data = {
+        amount: document.getElementById('amount').value,
+        type: document.getElementById('type').value,
+        description: document.getElementById('description').value
+      };
+      console.log('save txn', data);
+      alert('Salvo (exemplo): ' + JSON.stringify(data));
+    });
+  </script>
+</body>
+</html>
